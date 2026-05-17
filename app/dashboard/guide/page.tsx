@@ -174,6 +174,7 @@ export default function GuidePage() {
   const [tab, setTab] = useState("budget");
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [incomeInput, setIncomeInput] = useState("");
+  const [incomeFreq, setIncomeFreq] = useState<"weekly" | "fortnightly" | "monthly">("monthly");
   const [needsInput, setNeedsInput] = useState("");
   const [wantsInput, setWantsInput] = useState("");
 
@@ -204,7 +205,8 @@ export default function GuidePage() {
   useEffect(() => { if (needsFromTxs > 0 && !needsInput) setNeedsInput(String(Math.round(needsFromTxs))); }, [needsFromTxs]); // eslint-disable-line
   useEffect(() => { if (wantsFromTxs > 0 && !wantsInput) setWantsInput(String(Math.round(wantsFromTxs))); }, [wantsFromTxs]); // eslint-disable-line
 
-  const income = parseFloat(incomeInput) || 0;
+  const freqMultiplier = incomeFreq === "weekly" ? 52 / 12 : incomeFreq === "fortnightly" ? 26 / 12 : 1;
+  const income = (parseFloat(incomeInput) || 0) * freqMultiplier;
   const needsActual = parseFloat(needsInput) || 0;
   const wantsActual = parseFloat(wantsInput) || 0;
   const savingsActual = Math.max(0, income - needsActual - wantsActual);
@@ -259,7 +261,30 @@ export default function GuidePage() {
         <div>
           {/* Income card */}
           <div style={{ background: "linear-gradient(135deg, #0F172A, #1E1B4B)", borderRadius: 24, padding: "28px 32px", marginBottom: 24 }}>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 8 }}>Monthly Income (AUD)</p>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 12 }}>Income (AUD)</p>
+
+            {/* Frequency toggle */}
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 3, marginBottom: 14, width: "fit-content" }}>
+              {(["weekly", "fortnightly", "monthly"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setIncomeFreq(f)}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 8,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    background: incomeFreq === f ? "white" : "transparent",
+                    color: incomeFreq === f ? "#7C3AED" : "rgba(255,255,255,0.55)",
+                  }}
+                >
+                  {f === "weekly" ? "Weekly" : f === "fortnightly" ? "Fortnightly" : "Monthly"}
+                </button>
+              ))}
+            </div>
+
             <input
               type="number"
               min="0"
@@ -269,11 +294,14 @@ export default function GuidePage() {
               placeholder="0"
               style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "12px 16px", fontSize: 28, fontWeight: 800, color: "white", outline: "none", width: "100%", boxSizing: "border-box", letterSpacing: "-0.5px" }}
             />
-            {incomeFromTxs > 0 && (
-              <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginTop: 8 }}>
-                Auto-filled from your income transactions · {fmtCurrency(incomeFromTxs)} recorded this month
-              </p>
-            )}
+            <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginTop: 8 }}>
+              {incomeFreq === "weekly"
+                ? `Weekly income · monthly equivalent: ${fmtCurrency(income)}`
+                : incomeFreq === "fortnightly"
+                ? `Fortnightly income · monthly equivalent: ${fmtCurrency(income)}`
+                : "Monthly income"}
+              {incomeFromTxs > 0 && ` · ${fmtCurrency(incomeFromTxs)} recorded in transactions`}
+            </p>
             {income > 0 && (
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5, marginTop: 14 }}>
                 50/30/20 rule: <strong style={{ color: "white" }}>50% needs</strong> · <strong style={{ color: "white" }}>30% wants</strong> · <strong style={{ color: "white" }}>20% savings</strong>
