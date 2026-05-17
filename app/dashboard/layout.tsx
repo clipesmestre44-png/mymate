@@ -158,7 +158,9 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-          <button
+          <Link
+            href="/dashboard/settings"
+            onClick={onClose}
             style={{
               flex: 1,
               display: "flex",
@@ -167,16 +169,14 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
               gap: 6,
               padding: "8px",
               borderRadius: 10,
-              background: "none",
-              border: "none",
+              textDecoration: "none",
               color: "#94A3B8",
               fontSize: 12,
               fontWeight: 500,
-              cursor: "pointer",
             }}
           >
             <Settings size={14} /> Settings
-          </button>
+          </Link>
           <button
             onClick={handleSignOut}
             style={{
