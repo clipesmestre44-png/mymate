@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   TrendingUp,
   Calculator,
@@ -8,6 +8,7 @@ import {
   Percent,
   Info,
 } from "lucide-react";
+import { useAccounts } from "@/app/lib/store";
 import {
   AreaChart,
   Area,
@@ -39,10 +40,16 @@ function fmtFull(n: number) {
 
 export default function CalculatorPage() {
   const [investmentType, setInvestmentType] = useState<InvestmentType>("etf");
-  const [initial, setInitial] = useState(10000);
-  const [monthly, setMonthly] = useState(500);
+  const [initial, setInitial] = useState(0);
+  const [monthly, setMonthly] = useState(0);
   const [rate, setRate] = useState(9.5);
-  const [years, setYears] = useState(20);
+  const [years, setYears] = useState(10);
+
+  const { accounts } = useAccounts();
+  useEffect(() => {
+    const total = accounts.reduce((s, a) => s + a.balance, 0);
+    if (total > 0) setInitial(Math.round(total));
+  }, [accounts]);
 
   const selectedType = investmentTypes.find((t) => t.id === investmentType)!;
 
