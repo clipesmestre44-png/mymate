@@ -31,8 +31,12 @@ function fmt(n: number, currency = "AUD") {
   return new Intl.NumberFormat("en-AU", { style: "currency", currency, maximumFractionDigits: 2 }).format(Math.abs(n));
 }
 
-function AddAccountModal({ onClose }: { onClose: () => void }) {
-  const { addAccount } = useAccounts();
+type AddAccountModalProps = {
+  onClose: () => void;
+  onSave: (data: { name: string; institution: string; type: AccountType; balance: number; currency: Currency; number: string }) => Promise<void>;
+};
+
+function AddAccountModal({ onClose, onSave }: AddAccountModalProps) {
   const [name, setName] = useState("");
   const [institution, setInstitution] = useState("");
   const [type, setType] = useState<AccountType>("everyday");
@@ -40,19 +44,26 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
   const [currency, setCurrency] = useState<Currency>("AUD");
   const [number, setNumber] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    addAccount({
-      name: name.trim(),
-      institution: institution.trim() || name.trim(),
-      type,
-      balance: parseFloat(balance) || 0,
-      currency,
-      number: number.trim() ? `**** ${number.trim().slice(-4)}` : "**** ????",
-    });
-    onClose();
+    setError(null);
+    try {
+      await onSave({
+        name: name.trim(),
+        institution: institution.trim() || name.trim(),
+        type,
+        balance: parseFloat(balance) || 0,
+        currency,
+        number: number.trim() ? `**** ${number.trim().slice(-4)}` : "**** ????",
+      });
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save account");
+      setSaving(false);
+    }
   };
 
   return (
@@ -180,6 +191,12 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
           />
         </div>
 
+        {error && (
+          <div style={{ marginBottom: 16, padding: "12px 16px", borderRadius: 12, background: "#FEF2F2", border: "1px solid #FECACA", color: "#DC2626", fontSize: 13, fontWeight: 500 }}>
+            {error}
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={onClose}
@@ -212,7 +229,7 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
 }
 
 export default function AccountsPage() {
-  const { accounts, deleteAccount } = useAccounts();
+  const { accounts, addAccount, deleteAccount } = useAccounts();
   const [hidden, setHidden] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -223,7 +240,7 @@ export default function AccountsPage() {
 
   return (
     <div style={{ padding: "24px", maxWidth: 1000, margin: "0 auto" }}>
-      {showModal && <AddAccountModal onClose={() => setShowModal(false)} />}
+      {showModal && <AddAccountModal onClose={() => setShowModal(false)} onSave={addAccount} />}
 
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>

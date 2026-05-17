@@ -56,11 +56,16 @@ export function useAccounts() {
   const addAccount = async (data: Omit<Account, "id" | "createdAt">) => {
     const next: Account = { ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
     setAccounts((prev) => [...prev, next]);
-    await fetch("/api/accounts", {
+    const res = await fetch("/api/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(next),
     });
+    if (!res.ok) {
+      setAccounts((prev) => prev.filter((a) => a.id !== next.id));
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `Failed to save account (${res.status})`);
+    }
   };
 
   const updateBalance = async (id: string, balance: number) => {

@@ -27,10 +27,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.email) return Response.json({}, { status: 401 });
+  if (!session?.user?.email) return Response.json({ error: "Not authenticated" }, { status: 401 });
 
   const body = await req.json();
-  await supabase.from("accounts").insert({
+  const { error } = await supabase.from("accounts").insert({
     id: body.id,
     user_email: session.user.email,
     name: body.name,
@@ -41,6 +41,11 @@ export async function POST(req: Request) {
     number: body.number,
     created_at: body.createdAt,
   });
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 
   return Response.json({ ok: true });
 }
