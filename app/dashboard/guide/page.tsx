@@ -17,42 +17,13 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useTransactions } from "@/app/lib/store";
+import { useTransactions, useGoals, useChecklist, GOAL_COLORS, type Goal } from "@/app/lib/store";
 
 // ── Category buckets for 50/30/20 ────────────────────────────────────────────
 const NEEDS_CATS = new Set(["home", "bills", "transport", "health"]);
 const WANTS_CATS = new Set(["food", "shopping", "entertainment", "travel", "other"]);
 
-// ── Goals (localStorage) ─────────────────────────────────────────────────────
-const GOAL_COLORS = ["#7C3AED", "#10B981", "#F59E0B", "#06B6D4", "#F43F5E", "#8B5CF6"];
-
-interface Goal { id: string; label: string; target: number; current: number; color: string }
-
-function readLS<T>(key: string, fallback: T): T {
-  try { return JSON.parse(localStorage.getItem(key) || "null") ?? fallback; } catch { return fallback; }
-}
-
-function useGoals() {
-  const [goals, setGoals] = useState<Goal[]>([]);
-  useEffect(() => { setGoals(readLS("mymate_goals", [])); }, []);
-
-  const save = (next: Goal[]) => {
-    localStorage.setItem("mymate_goals", JSON.stringify(next));
-    setGoals(next);
-  };
-
-  const addGoal = (data: Omit<Goal, "id">) =>
-    save([...goals, { ...data, id: crypto.randomUUID() }]);
-
-  const deleteGoal = (id: string) => save(goals.filter((g) => g.id !== id));
-
-  const updateGoal = (id: string, updates: Partial<Goal>) =>
-    save(goals.map((g) => (g.id === id ? { ...g, ...updates } : g)));
-
-  return { goals, addGoal, deleteGoal, updateGoal };
-}
-
-// ── Checklist (localStorage) ─────────────────────────────────────────────────
+// ── Checklist items ───────────────────────────────────────────────────────────
 const CHECKLIST = [
   "Open an Australian bank account",
   "Get a Tax File Number (TFN)",
@@ -62,19 +33,6 @@ const CHECKLIST = [
   "Take out private health insurance (optional)",
   "File first Australian tax return",
 ];
-
-function useChecklist() {
-  const [done, setDone] = useState<boolean[]>(() => Array(CHECKLIST.length).fill(false));
-  useEffect(() => { setDone(readLS("mymate_checklist", Array(CHECKLIST.length).fill(false))); }, []);
-
-  const toggle = (i: number) => {
-    const next = done.map((v, j) => (j === i ? !v : v));
-    localStorage.setItem("mymate_checklist", JSON.stringify(next));
-    setDone(next);
-  };
-
-  return { done, toggle };
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function fmtCurrency(n: number) {
