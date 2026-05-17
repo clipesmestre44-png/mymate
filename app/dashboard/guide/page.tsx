@@ -173,7 +173,9 @@ function AddGoalModal({ onClose, onSave, nextColor }: { onClose: () => void; onS
 export default function GuidePage() {
   const [tab, setTab] = useState("budget");
   const [showAddGoal, setShowAddGoal] = useState(false);
-  const [manualIncome, setManualIncome] = useState("");
+  const [incomeInput, setIncomeInput] = useState("");
+  const [needsInput, setNeedsInput] = useState("");
+  const [wantsInput, setWantsInput] = useState("");
 
   const { transactions } = useTransactions();
   const { goals, addGoal, deleteGoal } = useGoals();
@@ -188,22 +190,29 @@ export default function GuidePage() {
     () => thisMonth.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0),
     [thisMonth],
   );
-  const income = incomeFromTxs || parseFloat(manualIncome) || 0;
-
-  const needsActual = useMemo(
+  const needsFromTxs = useMemo(
     () => thisMonth.filter((t) => t.amount < 0 && NEEDS_CATS.has(t.category)).reduce((s, t) => s + Math.abs(t.amount), 0),
     [thisMonth],
   );
-  const wantsActual = useMemo(
+  const wantsFromTxs = useMemo(
     () => thisMonth.filter((t) => t.amount < 0 && WANTS_CATS.has(t.category)).reduce((s, t) => s + Math.abs(t.amount), 0),
     [thisMonth],
   );
-  const totalSpent = needsActual + wantsActual;
-  const savingsActual = Math.max(0, income - totalSpent);
+
+  // Auto-fill inputs from transactions (only when empty so user edits aren't overwritten)
+  useEffect(() => { if (incomeFromTxs > 0 && !incomeInput) setIncomeInput(String(Math.round(incomeFromTxs))); }, [incomeFromTxs]); // eslint-disable-line
+  useEffect(() => { if (needsFromTxs > 0 && !needsInput) setNeedsInput(String(Math.round(needsFromTxs))); }, [needsFromTxs]); // eslint-disable-line
+  useEffect(() => { if (wantsFromTxs > 0 && !wantsInput) setWantsInput(String(Math.round(wantsFromTxs))); }, [wantsFromTxs]); // eslint-disable-line
+
+  const income = parseFloat(incomeInput) || 0;
+  const needsActual = parseFloat(needsInput) || 0;
+  const wantsActual = parseFloat(wantsInput) || 0;
+  const savingsActual = Math.max(0, income - needsActual - wantsActual);
 
   const needsBudget = income * 0.5;
   const wantsBudget = income * 0.3;
   const savingsBudget = income * 0.2;
+  const totalSpent = needsActual + wantsActual;
 
   // ── Dynamic tips ──────────────────────────────────────────────────────────
   const dynamicTips = useMemo(() => {
@@ -218,7 +227,7 @@ export default function GuidePage() {
       t.push({ icon: Zap, color: "#10B981", bg: "#ECFDF5", title: "Boost your savings rate", body: `You saved ${fmtCurrency(savingsActual)} this month (${((savingsActual / income) * 100).toFixed(0)}%). The 50/30/20 rule targets 20% — that would be ${fmtCurrency(income * 0.2)}.` });
     }
     return t;
-  }, [income, totalSpent, needsActual, savingsActual]);
+  }, [income, totalSpent, needsActual, savingsActual]); // eslint-disable-line
 
   const allTips = [...dynamicTips, ...STATIC_TIPS];
   const nextColor = GOAL_COLORS[goals.length % GOAL_COLORS.length];
@@ -248,34 +257,26 @@ export default function GuidePage() {
       {/* ── 50/30/20 Tab ───────────────────────────────────────────────────── */}
       {tab === "budget" && (
         <div>
+          {/* Income card */}
           <div style={{ background: "linear-gradient(135deg, #0F172A, #1E1B4B)", borderRadius: 24, padding: "28px 32px", marginBottom: 24 }}>
-            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 4 }}>Monthly Income</p>
-            {incomeFromTxs > 0 ? (
-              <>
-                <p style={{ color: "white", fontSize: 36, fontWeight: 800, letterSpacing: "-1px", marginBottom: 8 }}>
-                  {fmtCurrency(incomeFromTxs)}
-                </p>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>From your income transactions this month</p>
-              </>
-            ) : (
-              <>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, marginBottom: 12 }}>
-                  No income transactions recorded yet. Enter your monthly income to see your budget:
-                </p>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={manualIncome}
-                  onChange={(e) => setManualIncome(e.target.value)}
-                  placeholder="e.g. 4500"
-                  style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "12px 16px", fontSize: 20, fontWeight: 700, color: "white", outline: "none", width: "100%", boxSizing: "border-box" }}
-                />
-              </>
+            <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginBottom: 8 }}>Monthly Income (AUD)</p>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={incomeInput}
+              onChange={(e) => setIncomeInput(e.target.value)}
+              placeholder="0"
+              style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 12, padding: "12px 16px", fontSize: 28, fontWeight: 800, color: "white", outline: "none", width: "100%", boxSizing: "border-box", letterSpacing: "-0.5px" }}
+            />
+            {incomeFromTxs > 0 && (
+              <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, marginTop: 8 }}>
+                Auto-filled from your income transactions · {fmtCurrency(incomeFromTxs)} recorded this month
+              </p>
             )}
             {income > 0 && (
-              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5, marginTop: 16 }}>
-                The 50/30/20 rule: <strong style={{ color: "white" }}>50% needs</strong>, <strong style={{ color: "white" }}>30% wants</strong>, <strong style={{ color: "white" }}>20% savings</strong>.
+              <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 13, lineHeight: 1.5, marginTop: 14 }}>
+                50/30/20 rule: <strong style={{ color: "white" }}>50% needs</strong> · <strong style={{ color: "white" }}>30% wants</strong> · <strong style={{ color: "white" }}>20% savings</strong>
               </p>
             )}
           </div>
@@ -283,48 +284,69 @@ export default function GuidePage() {
           {income === 0 ? (
             <div style={{ padding: "48px 24px", textAlign: "center", background: "white", borderRadius: 20, border: "1px solid #F1F5F9" }}>
               <Target size={32} color="#CBD5E1" style={{ margin: "0 auto 12px", display: "block" }} />
-              <p style={{ fontWeight: 600, color: "#94A3B8" }}>Enter your income above to see your 50/30/20 breakdown</p>
+              <p style={{ fontWeight: 600, color: "#94A3B8" }}>Enter your monthly income above to see your 50/30/20 breakdown</p>
             </div>
           ) : (
-            [
-              { label: "Needs", sub: "Rent, bills, transport, health", budget: needsBudget, actual: needsActual, targetPct: 50, color: "#7C3AED", icons: [Home, Zap, Car] },
-              { label: "Wants", sub: "Food, shopping, entertainment, travel", budget: wantsBudget, actual: wantsActual, targetPct: 30, color: "#F59E0B", icons: [Car, BookOpen] },
-              { label: "Savings & Investing", sub: "What's left after spending", budget: savingsBudget, actual: savingsActual, targetPct: 20, color: "#10B981", icons: [TrendingUp, ShieldCheck] },
-            ].map((row) => {
-              const over = row.actual > row.budget;
-              const pct = income > 0 ? (row.actual / income) * 100 : 0;
-              return (
-                <div key={row.label} style={{ background: "white", borderRadius: 20, padding: "22px 24px", border: "1px solid #F1F5F9", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                    <div>
-                      <p style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>{row.label}</p>
-                      <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{row.sub}</p>
+            <>
+              {/* Needs row */}
+              {[
+                { label: "Needs", sub: "Rent, bills, transport, health", budget: needsBudget, actual: needsActual, targetPct: 50, color: "#7C3AED", input: needsInput, setInput: setNeedsInput, fromTxs: needsFromTxs, editable: true },
+                { label: "Wants", sub: "Food, shopping, entertainment, travel", budget: wantsBudget, actual: wantsActual, targetPct: 30, color: "#F59E0B", input: wantsInput, setInput: setWantsInput, fromTxs: wantsFromTxs, editable: true },
+                { label: "Savings & Investing", sub: "Income minus needs and wants", budget: savingsBudget, actual: savingsActual, targetPct: 20, color: "#10B981", input: null, setInput: null, fromTxs: 0, editable: false },
+              ].map((row) => {
+                const over = row.actual > row.budget;
+                const pct = income > 0 ? (row.actual / income) * 100 : 0;
+                return (
+                  <div key={row.label} style={{ background: "white", borderRadius: 20, padding: "22px 24px", border: "1px solid #F1F5F9", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", marginBottom: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+                      <div>
+                        <p style={{ fontWeight: 700, fontSize: 16, color: "#0F172A" }}>{row.label}</p>
+                        <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{row.sub}</p>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        {row.editable && row.setInput ? (
+                          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700, color: "#94A3B8" }}>$</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={row.input ?? ""}
+                              onChange={(e) => row.setInput!(e.target.value)}
+                              placeholder="0"
+                              style={{ width: 110, border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "6px 10px", fontSize: 18, fontWeight: 800, color: over ? "#F43F5E" : "#0F172A", outline: "none", textAlign: "right", background: "white" }}
+                            />
+                          </div>
+                        ) : (
+                          <p style={{ fontWeight: 800, fontSize: 18, color: over ? "#F43F5E" : "#10B981" }}>
+                            {fmtCurrency(row.actual)}
+                          </p>
+                        )}
+                        <p style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>of {fmtCurrency(row.budget)} target</p>
+                        {row.fromTxs > 0 && (
+                          <p style={{ fontSize: 11, color: "#A78BFA", marginTop: 2 }}>auto from transactions</p>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <p style={{ fontWeight: 800, fontSize: 18, color: over ? "#F43F5E" : "#0F172A" }}>
-                        {fmtCurrency(row.actual)}
-                      </p>
-                      <p style={{ fontSize: 12, color: "#94A3B8" }}>of {fmtCurrency(row.budget)} budget</p>
+                    <div style={{ background: "#F1F5F9", borderRadius: 6, height: 8, marginBottom: 10, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${Math.min((row.actual / Math.max(row.budget, 1)) * 100, 100)}%`, background: over ? "#F43F5E" : row.color, borderRadius: 6 }} />
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "#94A3B8" }}>{pct.toFixed(1)}% of income · target {row.targetPct}%</span>
+                      {over ? (
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#F43F5E", display: "flex", alignItems: "center", gap: 4 }}>
+                          <AlertTriangle size={12} /> {fmtCurrency(row.actual - row.budget)} over
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#10B981", display: "flex", alignItems: "center", gap: 4 }}>
+                          <CheckCircle2 size={12} /> {fmtCurrency(row.budget - row.actual)} under
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <div style={{ background: "#F1F5F9", borderRadius: 6, height: 8, marginBottom: 10, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${Math.min((row.actual / row.budget) * 100, 100)}%`, background: over ? "#F43F5E" : row.color, borderRadius: 6 }} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 12, color: "#94A3B8" }}>{pct.toFixed(1)}% of income · target {row.targetPct}%</span>
-                    {over ? (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#F43F5E", display: "flex", alignItems: "center", gap: 4 }}>
-                        <AlertTriangle size={12} /> {fmtCurrency(row.actual - row.budget)} over
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 12, fontWeight: 600, color: "#10B981", display: "flex", alignItems: "center", gap: 4 }}>
-                        <CheckCircle2 size={12} /> {fmtCurrency(row.budget - row.actual)} under
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </>
           )}
         </div>
       )}
