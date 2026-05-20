@@ -275,7 +275,16 @@ export default function TransactionsPage() {
   const [showModal, setShowModal] = useState(false);
 
   const { transactions, addTransaction } = useTransactions();
-  const { accounts } = useAccounts();
+  const { accounts, updateBalance } = useAccounts();
+
+  // Wrapper: add transaction + immediately update the linked account balance
+  const handleAddTransaction = (data: Omit<Transaction, "id">) => {
+    addTransaction(data);
+    if (data.accountId) {
+      const acc = accounts.find((a) => a.id === data.accountId);
+      if (acc) updateBalance(data.accountId, acc.balance + data.amount);
+    }
+  };
 
   const accountOptions = accounts.map((a) => ({ id: a.id, name: a.name, institution: a.institution }));
   const accountMap = Object.fromEntries(accounts.map((a) => [a.id, a]));
@@ -642,7 +651,7 @@ export default function TransactionsPage() {
       {showModal && (
         <AddTransactionModal
           onClose={() => setShowModal(false)}
-          onSave={addTransaction}
+          onSave={handleAddTransaction}
           accountOptions={accountOptions}
         />
       )}

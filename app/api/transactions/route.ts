@@ -30,7 +30,7 @@ export async function POST(req: Request) {
   if (!session?.user?.email) return Response.json({}, { status: 401 });
 
   const body = await req.json();
-  await supabase.from("transactions").insert({
+  const { error } = await supabase.from("transactions").insert({
     id: body.id,
     user_email: session.user.email,
     name: body.name,
@@ -40,6 +40,26 @@ export async function POST(req: Request) {
     date: body.date,
     tags: body.tags ?? [],
   });
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Update account balance
+  if (body.accountId) {
+    const { data: account } = await supabase
+      .from("accounts")
+      .select("balance")
+      .eq("id", body.accountId)
+      .eq("user_email", session.user.email)
+      .single();
+
+    if (account) {
+      await supabase
+        .from("accounts")
+        .update({ balance: Number(account.balance) + Number(body.amount) })
+        .eq("id", body.accountId)
+        .eq("user_email", session.user.email);
+    }
+  }
 
   return Response.json({ ok: true });
 }
@@ -51,11 +71,37 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
+  // Fetch transaction before deleting to reverse the balance
+  const { data: txn } = await supabase
+    .from("transactions")
+    .select("amount, account_id")
+    .eq("id", id!)
+    .eq("user_email", session.user.email)
+    .single();
+
   await supabase
     .from("transactions")
     .delete()
     .eq("id", id!)
     .eq("user_email", session.user.email);
+
+  // Reverse the balance change on the account
+  if (txn?.account_id) {
+    const { data: account } = await supabase
+      .from("accounts")
+      .select("balance")
+      .eq("id", txn.account_id)
+      .eq("user_email", session.user.email)
+      .single();
+
+    if (account) {
+      await supabase
+        .from("accounts")
+        .update({ balance: Number(account.balance) - Number(txn.amount) })
+        .eq("id", txn.account_id)
+        .eq("user_email", session.user.email);
+    }
+  }
 
   return Response.json({ ok: true });
 }
