@@ -94,7 +94,7 @@ function AccountHistoryModal({
           <p style={{ color: "white", fontWeight: 800, fontSize: 32, letterSpacing: "-0.5px" }}>
             {hidden ? "••••••" : `${account.balance < 0 ? "-" : ""}${fmt(account.balance, account.currency)}`}
           </p>
-          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 4 }}>{account.number} · {account.currency}</p>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, marginTop: 4 }}>{account.number ?? "****"} · {account.currency}</p>
 
           {/* In / Out / Count */}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -172,12 +172,12 @@ function EditAccountModal({ account, onClose, onSave }: {
   onClose: () => void;
   onSave: (data: Account) => void;
 }) {
-  const [name, setName] = useState(account.name);
-  const [institution, setInstitution] = useState(account.institution);
-  const [type, setType] = useState<AccountType>(account.type);
-  const [balance, setBalance] = useState(String(account.balance));
-  const [currency, setCurrency] = useState<Currency>(account.currency);
-  const [number, setNumber] = useState(account.number.replace("**** ", ""));
+  const [name, setName] = useState(account.name ?? "");
+  const [institution, setInstitution] = useState(account.institution ?? "");
+  const [type, setType] = useState<AccountType>(account.type ?? "everyday");
+  const [balance, setBalance] = useState(String(account.balance ?? 0));
+  const [currency, setCurrency] = useState<Currency>(account.currency ?? "AUD");
+  const [number, setNumber] = useState((account.number ?? "").replace("**** ", ""));
 
   const handleSave = () => {
     if (!name.trim()) return;
@@ -555,7 +555,7 @@ export default function AccountsPage() {
                 {hidden ? "••••••" : `${acc.balance < 0 ? "-" : ""}${fmt(acc.balance, acc.currency)}`}
               </p>
               <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, marginTop: 4 }}>
-                {acc.number} · {acc.currency}
+                {acc.number ?? "****"} · {acc.currency}
               </p>
               {/* Transaction count badge */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14 }}>
