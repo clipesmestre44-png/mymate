@@ -64,6 +64,64 @@ export async function POST(req: Request) {
   return Response.json({ ok: true });
 }
 
+export async function PATCH(req: Request) {
+  const session = await auth();
+  if (!session?.user?.email) return Response.json({}, { status: 401 });
+
+  const body = await req.json(); // { id, name, amount, category, accountId, date, tags }
+
+  // Get old transaction to reverse its balance effect
+  const { data: old } = await supabase
+    .from("transactions")
+    .select("amount, account_id")
+    .eq("id", body.id)
+    .eq("user_email", session.user.email)
+    .single();
+
+  // Update the transaction
+  const { error } = await supabase
+    .from("transactions")
+    .update({
+      name: body.name,
+      amount: body.amount,
+      category: body.category,
+      account_id: body.accountId,
+      date: body.date,
+      tags: body.tags ?? [],
+    })
+    .eq("id", body.id)
+    .eq("user_email", session.user.email);
+
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // Adjust balances: reverse old, apply new
+  if (old) {
+    // Reverse old amount from old account
+    const { data: oldAcc } = await supabase
+      .from("accounts").select("balance")
+      .eq("id", old.account_id).eq("user_email", session.user.email).single();
+    if (oldAcc) {
+      await supabase.from("accounts")
+        .update({ balance: Number(oldAcc.balance) - Number(old.amount) })
+        .eq("id", old.account_id).eq("user_email", session.user.email);
+    }
+  }
+
+  // Apply new amount to new account
+  if (body.accountId) {
+    const { data: newAcc } = await supabase
+      .from("accounts").select("balance")
+      .eq("id", body.accountId).eq("user_email", session.user.email).single();
+    if (newAcc) {
+      await supabase.from("accounts")
+        .update({ balance: Number(newAcc.balance) + Number(body.amount) })
+        .eq("id", body.accountId).eq("user_email", session.user.email);
+    }
+  }
+
+  return Response.json({ ok: true });
+}
+
 export async function DELETE(req: Request) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({}, { status: 401 });

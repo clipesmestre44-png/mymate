@@ -107,12 +107,21 @@ export function useTransactions() {
     });
   };
 
+  const updateTransaction = async (updated: Transaction) => {
+    setTransactions((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    await fetch("/api/transactions", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    });
+  };
+
   const deleteTransaction = async (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
     await fetch(`/api/transactions?id=${id}`, { method: "DELETE" });
   };
 
-  return { transactions, addTransaction, deleteTransaction };
+  return { transactions, addTransaction, updateTransaction, deleteTransaction };
 }
 
 // ── Goals ─────────────────────────────────────────────────────────────────────

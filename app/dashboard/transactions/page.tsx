@@ -18,6 +18,8 @@ import {
   Plus,
   X,
   Tag,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useTransactions, useAccounts, type Transaction } from "@/app/lib/store";
 
@@ -54,18 +56,22 @@ function AddTransactionModal({
   onClose,
   onSave,
   accountOptions,
+  initial,
 }: {
   onClose: () => void;
   onSave: (data: Omit<Transaction, "id">) => void;
   accountOptions: { id: string; name: string; institution: string }[];
+  initial?: Transaction;
 }) {
-  const [type, setType] = useState<"expense" | "income">("expense");
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("food");
-  const [accountId, setAccountId] = useState(accountOptions[0]?.id ?? "");
-  const [date, setDate] = useState(today());
-  const [tagsInput, setTagsInput] = useState("");
+  const isEdit = !!initial;
+  const initType = initial ? (initial.amount >= 0 ? "income" : "expense") : "expense";
+  const [type, setType] = useState<"expense" | "income">(initType);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [amount, setAmount] = useState(initial ? String(Math.abs(initial.amount)) : "");
+  const [category, setCategory] = useState(initial?.category ?? "food");
+  const [accountId, setAccountId] = useState(initial?.accountId ?? accountOptions[0]?.id ?? "");
+  const [date, setDate] = useState(initial?.date ?? today());
+  const [tagsInput, setTagsInput] = useState(initial?.tags.join(", ") ?? "");
   const [error, setError] = useState("");
 
   const handleSubmit = () => {
@@ -128,7 +134,7 @@ function AddTransactionModal({
         <div style={{ width: 40, height: 4, borderRadius: 2, background: "#E2E8F0", margin: "0 auto 20px" }} />
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A" }}>Add Transaction</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: "#0F172A" }}>{isEdit ? "Edit Transaction" : "Add Transaction"}</h2>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8" }}>
             <X size={20} />
           </button>
@@ -262,7 +268,7 @@ function AddTransactionModal({
             cursor: "pointer",
           }}
         >
-          Save Transaction
+          {isEdit ? "Save Changes" : "Save Transaction"}
         </button>
       </div>
     </div>
@@ -273,16 +279,48 @@ export default function TransactionsPage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [showModal, setShowModal] = useState(false);
+  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
-  const { transactions, addTransaction } = useTransactions();
+  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
   const { accounts, updateBalance } = useAccounts();
 
-  // Wrapper: add transaction + immediately update the linked account balance
+  // Add: optimistic balance update
   const handleAddTransaction = (data: Omit<Transaction, "id">) => {
     addTransaction(data);
     if (data.accountId) {
       const acc = accounts.find((a) => a.id === data.accountId);
       if (acc) updateBalance(data.accountId, acc.balance + data.amount);
+    }
+  };
+
+  // Edit: reverse old balance, apply new balance
+  const handleEditTransaction = (data: Omit<Transaction, "id">) => {
+    if (!editingTx) return;
+    const updated = { ...editingTx, ...data };
+    updateTransaction(updated);
+    // Optimistic balance: reverse old amount, apply new
+    if (editingTx.accountId) {
+      const oldAcc = accounts.find((a) => a.id === editingTx.accountId);
+      if (oldAcc) updateBalance(editingTx.accountId, oldAcc.balance - editingTx.amount);
+    }
+    if (data.accountId) {
+      const newAcc = accounts.find((a) => a.id === data.accountId);
+      if (newAcc) {
+        const adjustedBalance = data.accountId === editingTx.accountId
+          ? newAcc.balance - editingTx.amount + data.amount
+          : newAcc.balance + data.amount;
+        updateBalance(data.accountId, adjustedBalance);
+      }
+    }
+    setEditingTx(null);
+  };
+
+  // Delete: reverse balance then remove
+  const handleDeleteTransaction = (tx: Transaction) => {
+    deleteTransaction(tx.id);
+    if (tx.accountId) {
+      const acc = accounts.find((a) => a.id === tx.accountId);
+      if (acc) updateBalance(tx.accountId, acc.balance - tx.amount);
     }
   };
 
@@ -632,16 +670,25 @@ export default function TransactionsPage() {
                     ))}
                   </div>
                 </div>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 15,
-                    color: tx.amount > 0 ? "#10B981" : "#0F172A",
-                    flexShrink: 0,
-                  }}
-                >
-                  {tx.amount > 0 ? "+" : "-"}{fmt(tx.amount)}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: tx.amount > 0 ? "#10B981" : "#0F172A" }}>
+                    {tx.amount > 0 ? "+" : "-"}{fmt(tx.amount)}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingTx(tx); }}
+                    title="Edit"
+                    style={{ background: "#F1F5F9", border: "none", borderRadius: 8, padding: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
+                  >
+                    <Pencil size={13} color="#64748B" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteTransaction(tx); }}
+                    title="Delete"
+                    style={{ background: "#FEF2F2", border: "none", borderRadius: 8, padding: 7, cursor: "pointer", display: "flex", alignItems: "center" }}
+                  >
+                    <Trash2 size={13} color="#F43F5E" />
+                  </button>
+                </div>
               </div>
             );
           })
@@ -653,6 +700,15 @@ export default function TransactionsPage() {
           onClose={() => setShowModal(false)}
           onSave={handleAddTransaction}
           accountOptions={accountOptions}
+        />
+      )}
+
+      {editingTx && (
+        <AddTransactionModal
+          onClose={() => setEditingTx(null)}
+          onSave={handleEditTransaction}
+          accountOptions={accountOptions}
+          initial={editingTx}
         />
       )}
     </div>
