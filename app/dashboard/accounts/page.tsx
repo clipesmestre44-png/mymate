@@ -43,12 +43,13 @@ function fmt(n: number, currency = "AUD") {
 // ── Account History Modal ─────────────────────────────────────────────────────
 
 function AccountHistoryModal({
-  account, transactions, hidden, onClose,
+  account, transactions, hidden, onClose, onEdit,
 }: {
   account: Account;
   transactions: Transaction[];
   hidden: boolean;
   onClose: () => void;
+  onEdit: () => void;
 }) {
   const meta = ACCOUNT_META[account.type];
   const Icon = TYPE_ICONS[account.type];
@@ -84,12 +85,20 @@ function AccountHistoryModal({
                 <p style={{ color: "white", fontWeight: 700, fontSize: 17 }}>{account.name}</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}
-            >
-              <X size={18} color="white" />
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={onEdit}
+                style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: "8px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: "white", fontWeight: 600, fontSize: 13 }}
+              >
+                <Pencil size={14} color="white" /> Edit
+              </button>
+              <button
+                onClick={onClose}
+                style={{ background: "rgba(255,255,255,0.2)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}
+              >
+                <X size={18} color="white" />
+              </button>
+            </div>
           </div>
           <p style={{ color: "white", fontWeight: 800, fontSize: 32, letterSpacing: "-0.5px" }}>
             {hidden ? "••••••" : `${account.balance < 0 ? "-" : ""}${fmt(account.balance, account.currency)}`}
@@ -167,10 +176,11 @@ function AccountHistoryModal({
 
 // ── Edit Account Modal ────────────────────────────────────────────────────────
 
-function EditAccountModal({ account, onClose, onSave }: {
+function EditAccountModal({ account, onClose, onSave, onDelete }: {
   account: Account;
   onClose: () => void;
   onSave: (data: Account) => void;
+  onDelete: (id: string) => void;
 }) {
   const [name, setName] = useState(account.name ?? "");
   const [institution, setInstitution] = useState(account.institution ?? "");
@@ -283,6 +293,19 @@ function EditAccountModal({ account, onClose, onSave }: {
             <Check size={17} /> Save Changes
           </button>
         </div>
+
+        {/* Delete account */}
+        <button
+          onClick={() => { onDelete(account.id); onClose(); }}
+          style={{
+            width: "100%", marginTop: 12, padding: "13px", borderRadius: 12,
+            border: "1.5px solid #FECACA", background: "#FEF2F2",
+            color: "#DC2626", fontWeight: 700, fontSize: 14, cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}
+        >
+          <Trash2 size={16} /> Delete Account
+        </button>
       </div>
     </div>
   );
@@ -445,14 +468,16 @@ export default function AccountsPage() {
           account={editingAccount}
           onClose={() => setEditingAccount(null)}
           onSave={updateAccount}
+          onDelete={(id) => { deleteAccount(id); setEditingAccount(null); setSelectedAccount(null); }}
         />
       )}
-      {selectedAccount && (
+      {selectedAccount && !editingAccount && (
         <AccountHistoryModal
           account={selectedAccount}
           transactions={accountTransactions}
           hidden={hidden}
           onClose={() => setSelectedAccount(null)}
+          onEdit={() => setEditingAccount(selectedAccount)}
         />
       )}
 
@@ -533,22 +558,8 @@ export default function AccountsPage() {
                   <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 12, marginBottom: 2 }}>{meta.label}</p>
                   <p style={{ color: "white", fontWeight: 700, fontSize: 15 }}>{acc.name}</p>
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Icon size={18} color="white" />
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setEditingAccount(acc); }}
-                    style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}
-                  >
-                    <Pencil size={15} color="rgba(255,255,255,0.85)" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteAccount(acc.id); }}
-                    style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}
-                  >
-                    <Trash2 size={15} color="rgba(255,255,255,0.7)" />
-                  </button>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={18} color="white" />
                 </div>
               </div>
               <p style={{ fontSize: 28, fontWeight: 800, color: "white", letterSpacing: "-0.5px", marginBottom: 2 }}>
