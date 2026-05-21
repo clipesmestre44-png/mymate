@@ -54,11 +54,20 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session?.user?.email) return Response.json({}, { status: 401 });
 
-  const { id, balance } = await req.json();
+  const body = await req.json();
+
+  // Full account update
+  const fields: Record<string, unknown> = { balance: body.balance };
+  if (body.name       !== undefined) fields.name        = body.name;
+  if (body.institution !== undefined) fields.institution = body.institution;
+  if (body.type       !== undefined) fields.type        = body.type;
+  if (body.currency   !== undefined) fields.currency    = body.currency;
+  if (body.number     !== undefined) fields.number      = body.number;
+
   await supabase
     .from("accounts")
-    .update({ balance })
-    .eq("id", id)
+    .update(fields)
+    .eq("id", body.id)
     .eq("user_email", session.user.email);
 
   return Response.json({ ok: true });

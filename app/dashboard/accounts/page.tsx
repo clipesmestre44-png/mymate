@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Plus, Eye, EyeOff, RefreshCw, TrendingUp, TrendingDown,
   Banknote, Globe, CreditCard, PiggyBank, BarChart2,
-  X, Check, Trash2, History,
+  X, Check, Trash2, History, Pencil,
 } from "lucide-react";
 import {
   useAccounts, useTransactions, ACCOUNT_META,
@@ -165,6 +165,129 @@ function AccountHistoryModal({
   );
 }
 
+// ── Edit Account Modal ────────────────────────────────────────────────────────
+
+function EditAccountModal({ account, onClose, onSave }: {
+  account: Account;
+  onClose: () => void;
+  onSave: (data: Account) => void;
+}) {
+  const [name, setName] = useState(account.name);
+  const [institution, setInstitution] = useState(account.institution);
+  const [type, setType] = useState<AccountType>(account.type);
+  const [balance, setBalance] = useState(String(account.balance));
+  const [currency, setCurrency] = useState<Currency>(account.currency);
+  const [number, setNumber] = useState(account.number.replace("**** ", ""));
+
+  const handleSave = () => {
+    if (!name.trim()) return;
+    onSave({
+      ...account,
+      name: name.trim(),
+      institution: institution.trim() || name.trim(),
+      type,
+      balance: parseFloat(balance) || 0,
+      currency,
+      number: number.trim() ? `**** ${number.trim().slice(-4)}` : account.number,
+    });
+    onClose();
+  };
+
+  const input = {
+    width: "100%", padding: "12px 16px", borderRadius: 12,
+    border: "1.5px solid #E2E8F0", fontSize: 15, color: "#0F172A",
+    outline: "none", background: "white",
+  } as const;
+  const label = {
+    fontSize: 12, fontWeight: 700 as const, color: "#64748B",
+    textTransform: "uppercase" as const, letterSpacing: "0.05em",
+    display: "block" as const, marginBottom: 8,
+  };
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, zIndex: 250, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: "white", borderRadius: 24, padding: 32, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h2 style={{ fontWeight: 800, fontSize: 20, color: "#0F172A" }}>Edit Account</h2>
+          <button onClick={onClose} style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}>
+            <X size={18} color="#64748B" />
+          </button>
+        </div>
+
+        {/* Type */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={label}>Account Type</label>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {ACCOUNT_TYPES.map((t) => {
+              const meta = ACCOUNT_META[t]; const Icon = TYPE_ICONS[t];
+              return (
+                <button key={t} onClick={() => setType(t)} style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, cursor: "pointer",
+                  border: type === t ? `2px solid ${meta.color}` : "1px solid #E2E8F0",
+                  background: type === t ? meta.bg : "white", color: type === t ? meta.color : "#64748B",
+                  fontWeight: type === t ? 700 : 500, fontSize: 13,
+                }}>
+                  <Icon size={14} /> {meta.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Name */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={label}>Account Name</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} style={input} />
+        </div>
+
+        {/* Institution */}
+        <div style={{ marginBottom: 16 }}>
+          <label style={label}>Institution</label>
+          <input value={institution} onChange={(e) => setInstitution(e.target.value)} placeholder="e.g. Commonwealth Bank" style={input} />
+        </div>
+
+        {/* Balance + Currency */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+          <div>
+            <label style={label}>Balance</label>
+            <input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} style={input} />
+          </div>
+          <div>
+            <label style={label}>Currency</label>
+            <select value={currency} onChange={(e) => setCurrency(e.target.value as Currency)} style={{ ...input, cursor: "pointer" }}>
+              {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Number */}
+        <div style={{ marginBottom: 28 }}>
+          <label style={label}>Last 4 digits</label>
+          <input value={number} onChange={(e) => setNumber(e.target.value.replace(/\D/g, "").slice(0, 4))} maxLength={4} placeholder="e.g. 4821" style={input} />
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: "14px", borderRadius: 12, border: "1px solid #E2E8F0", background: "white", color: "#64748B", fontWeight: 600, fontSize: 15, cursor: "pointer" }}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={!name.trim()} style={{
+            flex: 2, padding: "14px", borderRadius: 12, border: "none",
+            background: name.trim() ? "linear-gradient(135deg, #7C3AED, #6D28D9)" : "#E2E8F0",
+            color: name.trim() ? "white" : "#94A3B8",
+            fontWeight: 700, fontSize: 15, cursor: name.trim() ? "pointer" : "not-allowed",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}>
+            <Check size={17} /> Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Add Account Modal ─────────────────────────────────────────────────────────
 
 type AddAccountModalProps = {
@@ -298,11 +421,12 @@ function AddAccountModal({ onClose, onSave }: AddAccountModalProps) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AccountsPage() {
-  const { accounts, addAccount, deleteAccount } = useAccounts();
+  const { accounts, addAccount, updateAccount, deleteAccount } = useAccounts();
   const { transactions } = useTransactions();
   const [hidden, setHidden] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
 
   const totalAUD = accounts.reduce((sum, acc) => {
     if (acc.type === "credit") return sum - Math.abs(acc.balance);
@@ -316,6 +440,13 @@ export default function AccountsPage() {
   return (
     <div style={{ padding: "24px", maxWidth: 1000, margin: "0 auto" }}>
       {showModal && <AddAccountModal onClose={() => setShowModal(false)} onSave={addAccount} />}
+      {editingAccount && (
+        <EditAccountModal
+          account={editingAccount}
+          onClose={() => setEditingAccount(null)}
+          onSave={updateAccount}
+        />
+      )}
       {selectedAccount && (
         <AccountHistoryModal
           account={selectedAccount}
@@ -406,6 +537,12 @@ export default function AccountsPage() {
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <Icon size={18} color="white" />
                   </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEditingAccount(acc); }}
+                    style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}
+                  >
+                    <Pencil size={15} color="rgba(255,255,255,0.85)" />
+                  </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteAccount(acc.id); }}
                     style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 10, padding: 8, cursor: "pointer", display: "flex" }}

@@ -77,12 +77,21 @@ export function useAccounts() {
     });
   };
 
+  const updateAccount = async (data: Account) => {
+    setAccounts((prev) => prev.map((a) => (a.id === data.id ? data : a)));
+    await fetch("/api/accounts", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  };
+
   const deleteAccount = async (id: string) => {
     setAccounts((prev) => prev.filter((a) => a.id !== id));
     await fetch(`/api/accounts?id=${id}`, { method: "DELETE" });
   };
 
-  return { accounts, addAccount, updateBalance, deleteAccount };
+  return { accounts, addAccount, updateBalance, updateAccount, deleteAccount };
 }
 
 // ── Transactions ──────────────────────────────────────────────────────────────
