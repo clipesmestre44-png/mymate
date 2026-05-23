@@ -68,6 +68,7 @@ export function useAccounts() {
     }
   };
 
+  // Full PATCH — use only when user explicitly edits an account's balance/details
   const updateBalance = async (id: string, balance: number) => {
     setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, balance } : a)));
     await fetch("/api/accounts", {
@@ -75,6 +76,11 @@ export function useAccounts() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, balance }),
     });
+  };
+
+  // Local-only — use for optimistic UI after transactions (server already updated DB)
+  const shiftBalance = (id: string, delta: number) => {
+    setAccounts((prev) => prev.map((a) => (a.id === id ? { ...a, balance: a.balance + delta } : a)));
   };
 
   const updateAccount = async (data: Account) => {
@@ -91,7 +97,7 @@ export function useAccounts() {
     await fetch(`/api/accounts?id=${id}`, { method: "DELETE" });
   };
 
-  return { accounts, addAccount, updateBalance, updateAccount, deleteAccount };
+  return { accounts, addAccount, updateBalance, shiftBalance, updateAccount, deleteAccount };
 }
 
 // ── Transactions ──────────────────────────────────────────────────────────────

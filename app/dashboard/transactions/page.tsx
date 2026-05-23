@@ -282,46 +282,28 @@ export default function TransactionsPage() {
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
 
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions();
-  const { accounts, updateBalance } = useAccounts();
+  const { accounts, shiftBalance } = useAccounts();
 
-  // Add: optimistic balance update
+  // Add: server updates DB balance; client shifts local state (no second PATCH)
   const handleAddTransaction = (data: Omit<Transaction, "id">) => {
     addTransaction(data);
-    if (data.accountId) {
-      const acc = accounts.find((a) => a.id === data.accountId);
-      if (acc) updateBalance(data.accountId, acc.balance + data.amount);
-    }
+    if (data.accountId) shiftBalance(data.accountId, data.amount);
   };
 
-  // Edit: reverse old balance, apply new balance
+  // Edit: server updates DB balance; client shifts local state
   const handleEditTransaction = (data: Omit<Transaction, "id">) => {
     if (!editingTx) return;
-    const updated = { ...editingTx, ...data };
-    updateTransaction(updated);
-    // Optimistic balance: reverse old amount, apply new
-    if (editingTx.accountId) {
-      const oldAcc = accounts.find((a) => a.id === editingTx.accountId);
-      if (oldAcc) updateBalance(editingTx.accountId, oldAcc.balance - editingTx.amount);
-    }
-    if (data.accountId) {
-      const newAcc = accounts.find((a) => a.id === data.accountId);
-      if (newAcc) {
-        const adjustedBalance = data.accountId === editingTx.accountId
-          ? newAcc.balance - editingTx.amount + data.amount
-          : newAcc.balance + data.amount;
-        updateBalance(data.accountId, adjustedBalance);
-      }
-    }
+    updateTransaction({ ...editingTx, ...data });
+    // Reverse old, apply new (local only — server handles DB)
+    if (editingTx.accountId) shiftBalance(editingTx.accountId, -editingTx.amount);
+    if (data.accountId) shiftBalance(data.accountId, data.amount);
     setEditingTx(null);
   };
 
-  // Delete: reverse balance then remove
+  // Delete: server updates DB balance; client shifts local state
   const handleDeleteTransaction = (tx: Transaction) => {
     deleteTransaction(tx.id);
-    if (tx.accountId) {
-      const acc = accounts.find((a) => a.id === tx.accountId);
-      if (acc) updateBalance(tx.accountId, acc.balance - tx.amount);
-    }
+    if (tx.accountId) shiftBalance(tx.accountId, -tx.amount);
   };
 
   const accountOptions = accounts.map((a) => ({ id: a.id, name: a.name, institution: a.institution }));
