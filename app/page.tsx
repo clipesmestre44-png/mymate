@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import {
-  TrendingUp,
   Shield,
   Globe,
   ArrowRight,
@@ -11,7 +10,10 @@ import {
   PieChart,
   Calculator,
   BookOpen,
+  MapPin,
+  Heart,
 } from "lucide-react";
+import { LogoMark } from "@/app/components/LogoMark";
 
 const features = [
   {
@@ -97,19 +99,7 @@ export default function LandingPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
-                background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <TrendingUp size={20} color="white" />
-            </div>
+            <LogoMark size={34} color="#7C3AED" />
             <span style={{ fontWeight: 700, fontSize: 20, color: "#0F172A" }}>MyMate</span>
           </div>
           <button
@@ -157,7 +147,7 @@ export default function LandingPage() {
             marginBottom: 28,
           }}
         >
-          <span>🇦🇺</span> Built for Australia & New Arrivals
+          <MapPin size={13} /> Built for Australia & New Arrivals
         </div>
 
         <h1
@@ -337,23 +327,11 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ background: "#0F172A", borderTop: "1px solid #1E293B", padding: "24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <TrendingUp size={14} color="white" />
-          </div>
+          <LogoMark size={26} color="white" />
           <span style={{ fontWeight: 700, color: "white", fontSize: 16 }}>MyMate</span>
         </div>
         <p style={{ color: "#475569", fontSize: 13 }}>
-          © 2026 MyMate · ABN 00 000 000 000 · Built with ❤️ for Australia
+          © 2026 MyMate · ABN 00 000 000 000 · Built with <Heart size={12} color="#F43F5E" style={{ display: "inline", verticalAlign: "middle" }} /> for Australia
         </p>
       </footer>
     </div>

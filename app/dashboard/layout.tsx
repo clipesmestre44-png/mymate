@@ -11,13 +11,13 @@ import {
   BookOpen,
   Calculator,
   Settings,
-  TrendingUp,
   Bell,
   Menu,
   X,
   ChevronRight,
   LogOut,
 } from "lucide-react";
+import { LogoMark } from "@/app/components/LogoMark";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -89,19 +89,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 40, padding: "0 8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <TrendingUp size={18} color="white" />
-          </div>
+          <LogoMark size={32} color="white" />
           <span style={{ fontWeight: 700, fontSize: 18, color: "white" }}>MyMate</span>
         </div>
         {onClose && (
@@ -249,19 +237,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 9,
-                background: "linear-gradient(135deg, #7C3AED, #06B6D4)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <TrendingUp size={16} color="white" />
-            </div>
+            <LogoMark size={30} color="#7C3AED" />
             <span style={{ fontWeight: 700, fontSize: 17, color: "#0F172A" }}>MyMate</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

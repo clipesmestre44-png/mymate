@@ -598,7 +598,7 @@ export default function SettingsPage() {
       </div>
 
       <p style={{ textAlign: "center", color: "#CBD5E1", fontSize: 12, marginTop: 24 }}>
-        MyMate v1.0.0 · Built for Australia 🇦🇺
+        MyMate v1.0.0 · Built for Australia
       </p>
     </div>
   );

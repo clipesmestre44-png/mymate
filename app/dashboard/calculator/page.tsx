@@ -11,6 +11,18 @@ import {
   Briefcase,
   ChevronDown,
   ChevronUp,
+  Landmark,
+  Shield,
+  Home,
+  CalendarDays,
+  CalendarCheck,
+  CalendarRange,
+  BarChart3,
+  Sprout,
+  Leaf,
+  TreePine,
+  Trophy,
+  type LucideIcon,
 } from "lucide-react";
 import { useAccounts } from "@/app/lib/store";
 import {
@@ -26,11 +38,11 @@ import {
 type InvestmentType = "etf" | "savings" | "super" | "property";
 type CalcTab = "investment" | "pay";
 
-const investmentTypes: { id: InvestmentType; label: string; emoji: string; defaultRate: number; description: string }[] = [
-  { id: "etf",      label: "ETF / Shares",          emoji: "📈", defaultRate: 9.5, description: "Average ASX 200 historical return" },
-  { id: "savings",  label: "High-Interest Savings",  emoji: "🏦", defaultRate: 5.5, description: "ING Savings Maximiser current rate" },
-  { id: "super",    label: "Superannuation",         emoji: "🦘", defaultRate: 8.5, description: "Balanced fund average return" },
-  { id: "property", label: "Property",               emoji: "🏡", defaultRate: 6.8, description: "Average Australian property growth" },
+const investmentTypes: { id: InvestmentType; label: string; icon: LucideIcon; defaultRate: number; description: string }[] = [
+  { id: "etf",      label: "ETF / Shares",          icon: TrendingUp, defaultRate: 9.5, description: "Average ASX 200 historical return" },
+  { id: "savings",  label: "High-Interest Savings",  icon: Landmark,   defaultRate: 5.5, description: "ING Savings Maximiser current rate" },
+  { id: "super",    label: "Superannuation",         icon: Shield,     defaultRate: 8.5, description: "Balanced fund average return" },
+  { id: "property", label: "Property",               icon: Home,       defaultRate: 6.8, description: "Average Australian property growth" },
 ];
 
 // ── Australian tax helpers (2024-25) ─────────────────────────────────────────
@@ -217,10 +229,10 @@ function PayCalculator() {
           <p style={{ fontWeight: 700, fontSize: 14, color: "#0F172A", marginBottom: 16 }}>Pay Period Breakdown</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
             {[
-              { label: "Weekly",      gross: grossWeekly,       net: netWeekly,      emoji: "📅" },
-              { label: "Fortnightly", gross: grossFortnightly,  net: netWeekly * 2,  emoji: "📆" },
-              { label: "Monthly",     gross: grossMonthly,      net: netMonthly,     emoji: "🗓️" },
-              { label: "Annual",      gross: grossAnnual,       net: netAnnual,      emoji: "📊" },
+              { label: "Weekly",      gross: grossWeekly,       net: netWeekly,      icon: CalendarDays },
+              { label: "Fortnightly", gross: grossFortnightly,  net: netWeekly * 2,  icon: CalendarCheck },
+              { label: "Monthly",     gross: grossMonthly,      net: netMonthly,     icon: CalendarRange },
+              { label: "Annual",      gross: grossAnnual,       net: netAnnual,      icon: BarChart3 },
             ].map((row, i, arr) => (
               <div
                 key={row.label}
@@ -233,7 +245,7 @@ function PayCalculator() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 18 }}>{row.emoji}</span>
+                  <row.icon size={18} color="#7C3AED" />
                   <span style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{row.label}</span>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -345,7 +357,7 @@ function InvestmentCalculator() {
                 onClick={() => handleTypeChange(t.id)}
                 style={{ padding: "12px 10px", borderRadius: 12, border: investmentType === t.id ? "2px solid #7C3AED" : "1px solid #E2E8F0", background: investmentType === t.id ? "#F5F3FF" : "white", cursor: "pointer", textAlign: "left" }}
               >
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{t.emoji}</div>
+                <t.icon size={20} color={investmentType === t.id ? "#7C3AED" : "#94A3B8"} style={{ marginBottom: 4 }} />
                 <p style={{ fontSize: 12, fontWeight: 700, color: investmentType === t.id ? "#7C3AED" : "#0F172A" }}>{t.label}</p>
                 <p style={{ fontSize: 10, color: "#94A3B8", marginTop: 2 }}>{t.defaultRate}% avg</p>
               </button>
@@ -397,7 +409,7 @@ function InvestmentCalculator() {
         {/* Result card */}
         <div style={{ background: "linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)", borderRadius: 24, padding: "28px 32px" }}>
           <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 13, marginBottom: 6 }}>
-            Final Value after {years} years {selectedType.emoji}
+            Final Value after {years} years
           </p>
           <p style={{ fontSize: 44, fontWeight: 800, color: "white", letterSpacing: "-1.5px", marginBottom: 20 }}>
             {fmtFull(finalValue)}
@@ -460,14 +472,14 @@ function InvestmentCalculator() {
         <div style={{ background: "white", borderRadius: 20, padding: "22px 24px", border: "1px solid #F1F5F9", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
           <h3 style={{ fontWeight: 700, fontSize: 15, color: "#0F172A", marginBottom: 16 }}>Key Milestones</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {[{ yr: 5, emoji: "🌱" }, { yr: 10, emoji: "🌿" }, { yr: Math.round(years / 2), emoji: "🌳" }, { yr: years, emoji: "🏆" }]
+            {[{ yr: 5, icon: Sprout }, { yr: 10, icon: Leaf }, { yr: Math.round(years / 2), icon: TreePine }, { yr: years, icon: Trophy }]
               .filter((m, i, arr) => arr.findIndex((a) => a.yr === m.yr) === i && m.yr > 0 && m.yr <= years)
               .map((m) => {
                 const point = chartData.find((d) => d.year === m.yr);
                 if (!point) return null;
                 return (
                   <div key={m.yr} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", background: "#F8FAFC", borderRadius: 12 }}>
-                    <span style={{ fontSize: 20 }}>{m.emoji}</span>
+                    <m.icon size={20} color="#7C3AED" />
                     <div style={{ flex: 1 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>Year {m.yr} — {fmtFull(point.balance)}</p>
                       <p style={{ fontSize: 11, color: "#94A3B8" }}>{fmtFull(point.growth)} in compound growth</p>

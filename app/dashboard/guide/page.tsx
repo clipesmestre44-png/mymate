@@ -16,6 +16,7 @@ import {
   Plus,
   Trash2,
   X,
+  MapPin,
 } from "lucide-react";
 import { useTransactions, useGoals, useChecklist, GOAL_COLORS, type Goal } from "@/app/lib/store";
 
@@ -43,7 +44,7 @@ const tabs = [
   { id: "budget", label: "50/30/20 Budget", icon: Target },
   { id: "tips", label: "Smart Tips", icon: Lightbulb },
   { id: "goals", label: "Goals", icon: TrendingUp },
-  { id: "immigrant", label: "New to AU 🇦🇺", icon: Globe },
+  { id: "immigrant", label: "New to AU", icon: Globe },
 ];
 
 const STATIC_TIPS = [
@@ -416,7 +417,9 @@ export default function GuidePage() {
       {tab === "immigrant" && (
         <div>
           <div style={{ background: "linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%)", borderRadius: 24, padding: "28px 32px", marginBottom: 24 }}>
-            <p style={{ fontSize: 24, fontWeight: 800, color: "white", marginBottom: 8 }}>🇦🇺 New to Australia?</p>
+            <p style={{ fontSize: 24, fontWeight: 800, color: "white", marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+              <MapPin size={22} color="white" /> New to Australia?
+            </p>
             <p style={{ color: "rgba(255,255,255,0.8)", fontSize: 15, lineHeight: 1.6 }}>
               We know starting fresh in a new country is a lot. Here&apos;s your financial checklist to get set up the right way.
             </p>

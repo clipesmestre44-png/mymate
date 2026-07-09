@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Plus, Eye, EyeOff, RefreshCw, TrendingUp, TrendingDown,
   Banknote, Globe, CreditCard, PiggyBank, BarChart2,
-  X, Check, Trash2, History, Pencil,
+  X, Check, Trash2, History, Pencil, Landmark,
 } from "lucide-react";
 import {
   useAccounts, useTransactions, ACCOUNT_META,
@@ -607,7 +607,7 @@ export default function AccountsPage() {
       {/* Empty state */}
       {accounts.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 24px", color: "#94A3B8" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🏦</div>
+          <div style={{ marginBottom: 16 }}><Landmark size={48} color="#7C3AED" /></div>
           <p style={{ fontWeight: 700, fontSize: 18, color: "#0F172A", marginBottom: 8 }}>No accounts yet</p>
           <p style={{ fontSize: 14, marginBottom: 24 }}>Add your bank accounts to start tracking your money</p>
           <button onClick={() => setShowModal(true)} style={{
