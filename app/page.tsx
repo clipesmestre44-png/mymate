@@ -68,10 +68,20 @@ const stats = [
 
 export default function LandingPage() {
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     await signIn("google", { callbackUrl: "/dashboard" });
+  };
+
+  const handleDemoSignIn = async () => {
+    setDemoLoading(true);
+    await signIn("demo", {
+      email: "demo@mymate.app",
+      password: "Demo1234!",
+      callbackUrl: "/dashboard",
+    });
   };
 
   return (
@@ -222,6 +232,28 @@ export default function LandingPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 20 }}>
           <CheckCircle2 size={16} color="#10B981" />
           <span style={{ color: "#64748B", fontSize: 13 }}>No credit card required · Free to start</span>
+        </div>
+
+        <div style={{ marginTop: 16 }}>
+          <button
+            onClick={handleDemoSignIn}
+            disabled={demoLoading}
+            style={{
+              background: "transparent",
+              color: "#7C3AED",
+              border: "1.5px solid #DDD6FE",
+              borderRadius: 12,
+              padding: "11px 24px",
+              fontWeight: 600,
+              fontSize: 14,
+              cursor: demoLoading ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            {demoLoading ? "Loading..." : "Try Demo — no account needed"}
+          </button>
         </div>
       </section>
 
